@@ -1,0 +1,735 @@
+---
+title: "gene_project_fyr"
+author: "Rajasree Laha"
+date: "2024-08-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+## Project starts from here
+
+## Read & load the data
+
+```{r}
+# Read the TSV file(merged_data) back into data
+data = read.table('merged_data.tsv', header = TRUE, sep='\t')
+ 
+data
+```
+## Get first few rows of data
+
+```{r}
+head(data)
+ 
+```
+## check the type of 'data'
+```{r}
+
+#check the type of 'data'
+
+class(data)
+ 
+```
+## Set the 'GeneID' column as row names
+
+```{r}
+
+# Set the 'GeneID' column as row names
+rownames(data) <- data$GeneID
+
+# Remove the 'GeneID' column from the data frame
+data <- data[, -1]
+
+# Check the first few rows to confirm
+head(data)
+ 
+```
+## Getting the Raw Count
+
+
+
+
+```{r}
+#Getting the Raw Count
+
+# Get the number of rows and columns
+dim(data)
+
+# Get the number of rows (raw count) rows->samples/genes
+nrow(data)
+
+# Get the number of columns (features count) cols->features/attributes
+ncol(data)
+
+# 1. Summarize the read counts for each gene across all samples
+total_counts_per_gene <- rowSums(data)
+
+# Display total counts per gene
+#print(total_counts_per_gene)
+total_counts_per_gene
+
+## For detailed view, create a summary of expression per gene
+#gene_summary <- data.frame(
+#  Gene = rownames(data),
+#  TotalReads = total_counts_per_gene
+#)
+
+
+##print gene summary
+#gene_summary
+ 
+```
+
+
+
+
+
+## pre-filtering
+
+
+```{r}
+#pre-filtering
+
+#This code ensures that only genes with at least 10 zero counts in at least 3 samples are retained.
+
+# Define the threshold for the minimum number of zero counts per sample
+count_threshold <- 10
+
+# Define the smallest group size for which at least the count threshold must be met
+smallestGroupSize <- 3
+
+# Calculate the number of samples (columns) where counts are >= count_threshold for each gene (row)
+keep <- rowSums(data >= count_threshold) >= smallestGroupSize
+
+# Step 2: Filter the data to keep only rows (genes) that meet the condition
+filtered_data <- data[keep, ]
+
+# Display the filtered data
+filtered_data
+ 
+```
+
+## Dimention of filtered data
+
+```{r}
+ dim(filtered_data)
+
+```
+## Get 1st few rows of filtered data
+
+```{r}
+# Display the first few rows of the filtered data frame
+head(filtered_data)
+```
+## Writing the filtered_data in a tsv file(to use it in VST normalization & DE Genes)
+
+```{r}
+
+# Save the DataFrame to a TSV file
+write.table(filtered_data, file = "data_f.tsv", sep = "\t", row.names = TRUE, quote = FALSE)
+
+```
+
+## Read the data(data_f)
+```{r}
+# Read the TSV file into a data frame
+counts_data <- read.table("data_f.tsv", sep = "\t", header = TRUE, stringsAsFactors = FALSE)
+
+counts_data
+
+```
+
+## Getting the class labels from those 3 imgs
+```{r}
+#img1
+#install.packages("tesseract")
+#library(tesseract)
+
+## Specify the path to your image
+#image_path <- "C:/Users/HP/OneDrive/Desktop/clg proj final yr my #folder/GSE262814.png"
+
+## Perform OCR on the image
+#text_data1 <- ocr(image_path)
+
+## Print extracted text
+#cat(text_data1)
+
+
+## Convert text data to a data frame
+#text_lines <- strsplit(text_data1, "\n")[[1]]  # Split by lines
+
+## Create vectors for the Sample IDs and Conditions
+#samples <- sapply(text_lines, function(line) strsplit(line, " ")[[1]][1])
+#conditions <- sapply(text_lines, function(line) paste(strsplit(line, " #")[[1]][-1], collapse = " "))
+
+samples <- c(
+    "GSM8179740", "GSM8179741", "GSM8179742", "GSM8179743", "GSM8179744",
+    "GSM8179745", "GSM8179746", "GSM8179747", "GSM8179748", "GSM8179749",
+    "GSM8179750", "GSM8179751", "GSM8179752", "GSM8179753", "GSM8179754",
+    "GSM8179755", "GSM8179756", "GSM8179757", "GSM8179758", "GSM8179759"
+)
+
+conditions <- c(
+    "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+    "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP"
+)
+
+
+# Create the data frame
+df1 <- data.frame(Sample = samples, Condition = conditions, stringsAsFactors = FALSE)
+ 
+
+df1
+```
+```{r}
+#img2
+
+## Specify the path to your image
+#image_path <- "C:/Users/HP/OneDrive/Desktop/clg proj final yr my #folder/GSE262815.png"
+
+## Perform OCR on the image
+#text_data2 <- ocr(image_path)
+
+## Print extracted text
+#cat(text_data2)
+
+
+## Convert text data to a data frame
+#text_lines <- strsplit(text_data2, "\n")[[1]]  # Split by lines
+
+## Create vectors for the Sample IDs and Conditions
+#samples <- sapply(text_lines, function(line) strsplit(line, " ")[[1]][1])
+#conditions <- sapply(text_lines, function(line) paste(strsplit(line, " #")[[1]][-1], collapse = " "))
+
+samples <- c(
+    "GSM8179760", "GSM8179761", "GSM8179762", "GSM8179763", "GSM8179764", 
+    "GSM8179765", "GSM8179766", "GSM8179767", "GSM8179768", "GSM8179769",
+    "GSM8179770", "GSM8179771", "GSM8179772", "GSM8179773", "GSM8179774", 
+    "GSM8179775", "GSM8179776", "GSM8179777", "GSM8179778", "GSM8179779"
+)
+
+conditions <- c(
+     "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+    "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP"
+)
+
+# Create the data frame
+df2 <- data.frame(Sample = samples, Condition = conditions, stringsAsFactors = FALSE)
+
+df2
+```
+```{r}
+#img3
+
+samples <- c(
+  "GSM5180105", "GSM5180109", "GSMB180110", "GSMB180111", "GSMB180112", 
+  "GSMB180113", "GSMB180114", "GSMB180115", "GSMB180116", "GSMB180117",
+  "GSMB180118", "GSMB180119", "GSMB180120", "GSMB180121", "GSMB180122", 
+  "GSMB180123", "GSMB180124", "GSMB180125", "GSMB180125", "GSMB180127",
+  "GSMB180125", "GSMB180129", "GSMB180130", "GSMB180131", "GSMB180132",
+  "GSMB180123", "GSMB180134", "GSMB180125", "GSM5180135", "GSMB180127",
+  "GSMB180135", "GSM5180129", "GSMB180140", "GSMB180141", "GSMB180142", 
+  "GSMB180142", "GSMB180144", "GSMB180145", "GSM5180145", "GSMB180147", 
+  "GSMB180145", "GSMB180149", "GSMB180150", "GSMB180151", "GSMB180152", 
+  "GSMB180152", "GSMB180154", "GSMB180155", "GSMB180156", "GSMB180157",
+  "GSMB180155", "GSMB180150", "GSMB180160", "GSMB180161", "GSM5180162", 
+  "GSM5180162", "GSMB180164", "GSM5180165", "GSM5180165", "GSM5180167", 
+  "GSM5180155", "GSM5180169", "GSMB180170", "GSMB180171", "GSMB180172", 
+  "GSMB180173", "GSMB180174", "GSMB180175", "GSM5180175", "GSMB180177",
+  "GSMB180175", "GSM5180179", "GSMB180180", "GSMB180181", "GSMB180182", 
+  "GSMB180183", "GSMB180184", "GSM5180185", "GSM5180185", "GSMB180187", 
+  "GSM5180185", "GSM5180189", "GSM5180190", "GSMB180191", "GSM5180192", 
+  "GSM5180192", "GSM5180194", "GSM5180195", "GSM5180196"
+)
+
+conditions <- c(  
+    "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+    "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+    "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+    "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+    "LBP", "LBP", "LBP", "LBP", "LBP", "MBP", "MBP", "MBP", "MBP", "MBP",
+    "MBP", "MBP", "MBP", "MBP", "MBP", "MBP", "HBP", "HBP", "HBP", "HBP",
+    "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP",
+    "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP",
+    "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP", "HBP"
+)
+
+
+# Create the data frame
+df3 <- data.frame(Sample = samples, Condition = conditions, stringsAsFactors = FALSE)
+
+df3
+
+```
+
+
+```{r}
+#merge df1+df2+df3
+
+# Merge df1 and df2
+df1_df2 <- rbind(df1, df2)
+
+# Merge the result with df3
+final_merged_df <- rbind(df1_df2, df3)
+
+# Display the final merged dataframe
+final_merged_df
+ 
+```
+
+## change the name of columns
+```{r}
+
+# Sample names
+Genenames <- c(
+  "GSM8179740", "GSM8179741", "GSM8179743", "GSM8179744", "GSM8179745", 
+  "GSM8179747", "GSM8179751", "GSM8179752", "GSM8179754", "GSM8179757", 
+  "GSM8179758", "GSM8179760", "GSM8179762", "GSM8179763", "GSM8179764", 
+  "GSM8179766", "GSM8179767", "GSM8179768", "GSM8179769", "GSM8179770", 
+  "GSM8179772", "GSM8179774", "GSM8179775", "GSM8179778",
+   "GSM8180110", "GSM8180111", "GSM8180113", "GSM8180114", "GSM8180115", 
+  "GSM8180118", "GSM8180120", "GSM8180121", "GSM8180122", "GSM8180123",
+  "GSM8180124", "GSM8180127", "GSM8180129", "GSM8180130", "GSM8180131", 
+  "GSM8180132", "GSM8180135", "GSM8180138", "GSM8180141", "GSM8180144", 
+  "GSM8180147", "GSM8180149", "GSM8180151", "GSM8180153",
+   "GSM8180157", "GSM8180159", "GSM8180162", "GSM8180168", "GSM8180176", 
+  "GSM8180177", "GSM8180179", "GSM8180182", "GSM8180183", "GSM8180184",
+  "GSM8180186", "GSM8180187", "GSM8180188", "GSM8180192", "GSM8180193", 
+  "GSM8180195"
+)
+
+# Conditions
+classlabels <- c(
+ "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+  "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+  "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+  "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+  "LBP", "LBP", "LBP", "LBP", "MBP", "MBP", "MBP", "MBP", "MBP", "MBP",
+  "MBP", "MBP", "MBP", "MBP", "MBP", "HBP", "HBP", "HBP", "HBP", "HBP",
+  "HBP", "HBP", "HBP", "HBP"
+)
+
+# Creating the data frame coldata
+coldata <- data.frame(Sample = Genenames, Condition = classlabels, stringsAsFactors = FALSE)
+
+# Display the coldata
+#coldata
+
+# change the name of columns
+colnames(coldata) <- c("Genenames", "Classlabels")
+
+#display
+coldata
+ 
+```
+
+
+## Write merged data(Samples,Condition) inti sample_info
+
+```{r}
+##Write final_merged_df(Samples,Condition) into sample_info
+#write.table(coldata, file = "sample_info.tsv", sep = "\t", row.names = #TRUE, quote = FALSE)
+
+```
+
+## read sample_info
+
+```{r}
+
+## Read the file without headers
+#coldata <- read.table(file = "sample_info.tsv", sep = "\t", header = TRUE)
+
+#coldata
+
+```
+## remove duplicate rows from coldata
+```{r}
+ 
+## Remove duplicate rows from coldata
+#coldata <- unique(coldata)
+
+##display result
+#coldata
+
+```
+
+
+
+## Match cols of counts_data with rows of coldata
+```{r}
+
+## counts_data's columns are the identifiers for the gene names
+#col_names = colnames(counts_data)
+
+## Filter coldata to keep only rows where 'Gene names' match any column names in counts_data
+#coldata <- coldata[coldata$`Genenames` %in% col_names, ]  #filtered
+
+
+# Convert data frames to data.tables
+#counts_data <- as.data.table(counts_data)
+#coldata <- as.data.table(coldata)
+
+# Extract column names from counts_data
+#column_names <- colnames(counts_data)
+
+# Drop rows from coldata where 'Gene names' do not match column names in counts_data
+#filtered_coldata <- coldata[`Genenames` %in% column_names]
+
+#display result
+#filtered_coldata
+ 
+```
+
+
+## VST Normalization & DE gene analysis whole process
+
+## Install DESEQ2,airway,tidyverse
+
+```{r}
+# Step 1: Install BiocManager (if not already installed)
+#if (!requireNamespace("BiocManager", quietly = TRUE)) {
+#    install.packages("BiocManager")
+#}
+
+# Step 2: Use BiocManager to install the airway package
+#BiocManager::install("airway")
+#BiocManager::install("DESeq2")
+#BiocManager::install("tidyverse")
+
+# Step 3: Load the airway library
+#library(airway)
+#library(tidyverse)
+#library(DESeq2)
+ 
+```
+
+## DE gene analysis(Differentially expressed genes)
+
+## making sure the row names in coldata() matches to column names in counts_data
+```{r}
+
+# making sure the row names in filtered_coldata matches to column names in counts_data
+all(colnames(counts_data) %in% rownames(coldata))
+ 
+```
+## are they in the same order?
+```{r}
+all(colnames(counts_data) == rownames(coldata))
+ 
+```
+
+
+##constructing a DESeqDataSet object 
+
+```{r}
+ 
+#library("DESeq2")
+dds <- DESeqDataSetFromMatrix(countData = counts_data,
+                       colData = coldata,
+                       design = ~ Classlabels)
+
+dds
+
+```
+
+## set the factor level
+
+```{r}
+dds$Classlabels <- relevel(dds$Classlabels, ref = "LBP") 
+
+```
+
+
+## Run DESeq
+
+```{r}
+ 
+dds <- DESeq(dds)
+res <- results(dds)
+
+res
+
+```
+
+## Explore Results
+```{r}
+ summary(res)
+
+```
+
+
+## Change adjusted p-value 
+```{r}
+
+#adjusted p-value threshold (from <.1 to .01)
+res0.1 <- results(dds, alpha = 0.1, lfcThreshold = 1) #pval<=0.1 & LFC>=1
+summary(res0.1)
+
+
+
+```
+## extract the differentially expressed genes from res0.1 and convert it into a matrix
+```{r}
+
+# Filter to get only significantly differentially expressed genes (adjusted p-value <= 0.1)
+de_genes <- subset(res0.1, padj <= 0.1 & abs(log2FoldChange) >= 1)
+
+# Convert the results to a matrix
+de_matrix <- as.matrix(de_genes)
+
+# Display the matrix
+de_matrix
+
+dim(de_genes)
+
+
+```
+
+
+
+
+
+## contrasts- comparisons made under the resultnames
+```{r}
+
+resultsNames(dds)
+ 
+```
+
+## contrasts- comparisons of various classlabels
+```{r}
+
+results(dds, contrast = c("Classlabels", "HBP", "MBP"))
+ 
+
+```
+
+## Visualization
+
+```{r}
+ 
+# MA plot
+plotMA(res)
+
+#MA plot--helps in examining the differential expression of genes between two conditions (e.g., HBP vs LBP, e.g., HBP vs MBP, e.g., MBP vs LBP).
+
+#Y-axis (M): Points higher up indicate higher expression in one condition compared to the other, while points lower down indicate lower expression.
+
+#X-axis (A): Mean of the normalized counts across samples (i.e., the average expression level of each gene).
+
+#Points: Each point represents a gene.
+
+#Genes with no significant change in expression between conditions will be centered around 0 on the y-axis.(meaning there's no significant difference between the two conditions for those genes-->uncoloured genes, i e they aren't the cause of this disease.)
+
+
+#Genes with a significant difference in expression (either upregulated or downregulated) will appear further away from 0 on the y-axis.(upregulated triangles-- these genes are more highly expressed in individuals with high blood pressure, downregulated triangles-- these genes are less expressed in individuals with high blood pressure compared to those with low blood pressure, ie more highly expressed in individuals with low blood pressure. )
+
+
+
+# significantly differentially expressed genes are colored blue dots(those points represent genes that pass a significance threshold (e.g., adjusted p-value < 0.05).).---->(Meaning :  The blue dots indicate genes whose expression levels are significantly different between the HBP and LBP groups,which means the difference in expression is unlikely to be due to random variation, i e they are the cause of this disease )
+
+```
+
+
+
+## visualization with volcano plot
+
+```{r}
+
+#BiocManager::install("EnhancedVolcano")
+#library(EnhancedVolcano)
+
+# Volcano Plot using EnhancedVolcano package
+EnhancedVolcano(res,
+                lab = rownames(res),         # Gene names
+                x = 'log2FoldChange',        # Log2 fold change
+                y = 'padj',                  # Adjusted p-value
+                xlab = 'Log2 Fold Change',
+                ylab = '-Log10 Adjusted P-value',
+                title = 'Volcano Plot',
+                pCutoff = 0.01,              # Threshold for significance
+                FCcutoff = 1.0,              # Fold change threshold for labeling
+                pointSize = 1.5,             # Size of points
+                colAlpha = 0.8,              # Transparency of points
+                legendPosition = 'bottom')   # Position of legend
+
+
+
+#lab = rownames(res): Specifies the labels for the points on the plot, typically gene names.
+
+#x = 'log2FoldChange': Uses the log2 fold change values from the res object for the x-axis.
+
+#y = 'padj': Uses the adjusted p-value (padj) from the res object for the y-axis.
+
+#pCutoff = 0.05: Sets the significance threshold for p-values (genes with padj < 0.05 are considered significant).
+
+#FCcutoff = 1.0: Sets the fold change threshold; only genes with an absolute log2 fold change > 1 will be highlighted.
+
+#pointSize = 2.0: Specifies the size of the points (dots) in the plot.
+
+#colAlpha = 0.8: Adjusts the transparency of the points, with 0 being fully transparent and 1 fully opaque.
+
+#legendPosition = 'bottom': Positions the legend at the bottom of the plot.
+ 
+```
+
+
+## VST Normalization
+## Data transformations and visualization
+ 
+```{r}
+#Extracting transformed values
+vsd <- vst(dds, blind=FALSE) #vst normalization
+
+head(assay(vsd), 3) #this will display the first 3 rows of the transformed count matrix(counts_data) from the vsd object
+
+
+```
+
+## Effects of transformations on the variance
+
+## dispersion plot with dds obj
+
+```{r}
+#BiocManager::install("DESeq2")
+#library(DESeq2)
+
+
+plotDispEsts(dds)  #This line plots the dispersion estimates of the count data in the dds object, showing the relationship between the mean expression level and the dispersion--- dispersion plot with dds obj
+ 
+
+```
+
+## Heatmap
+```{r}
+
+#Heatmap
+
+#install.packages("pheatmap")
+#library(pheatmap)
+
+
+
+#heatmat of vsd
+mat <- assay(vsd)
+pheatmap(mat, cluster_rows = TRUE, cluster_cols = TRUE)  # Cluster rows to show hierarchical clustering of genes, Cluster columns to show hierarchical clustering of samples
+ 
+```
+
+## sample-to-sample distances(need to do transpose)
+
+```{r}
+#transpose
+sampleDists <- dist(t(assay(vsd)))
+
+#display
+sampleDists
+
+ 
+```
+
+## Heatmap of the sample-to-sample distances
+```{r}
+
+#library("RColorBrewer")
+ 
+sampleDistMatrix <- as.matrix(sampleDists)
+rownames(sampleDistMatrix) <- paste(vsd$condition, vsd$type, sep="-")
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows=sampleDists,
+         clustering_distance_cols=sampleDists,
+         col=colors)
+
+```
+
+
+## transpose the counts data & add c.l.
+```{r}
+trans_de = t(counts_data)
+trans_vst=t(assay(vsd))
+
+
+#convert the transposed matrix back to dataframe
+trans_df<- as.data.frame(trans_de)  #de genes
+vst_df<-as.data.frame(trans_vst)  #vst normed. genes
+
+#display
+trans_df
+vst_df
+
+#display fewer rows
+head(trans_df)
+head(vst_df)
+
+
+```
+
+## Final dataset/ frame from this whole process
+```{r}
+
+#giving the 1st col name as SID
+#colnames(trans_df)[0] <- "SID"
+
+
+
+#adding a new column classlabels
+  trans_df$CLabel <- c(
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "MBP", "MBP", "MBP", "MBP", "MBP", "MBP",
+   "MBP", "MBP", "MBP", "MBP", "MBP", "HBP", "HBP", "HBP", "HBP", "HBP",
+   "HBP", "HBP", "HBP", "HBP"
+  )
+
+
+vst_df$CLabel <- c(
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP", "LBP",
+   "LBP", "LBP", "LBP", "LBP", "MBP", "MBP", "MBP", "MBP", "MBP", "MBP",
+   "MBP", "MBP", "MBP", "MBP", "MBP", "HBP", "HBP", "HBP", "HBP", "HBP",
+   "HBP", "HBP", "HBP", "HBP"
+  )
+
+#display the final df
+trans_df
+vst_df   
+ 
+```
+
+## Write the df to a csv file
+```{r}
+
+write.table(trans_df, file = "Data.tsv", sep = "\t", row.names = TRUE, quote = FALSE)
+
+write.table(vst_df, file = "Data_v.tsv", sep = "\t", row.names = TRUE, quote = FALSE)
+ 
+```
+
+
+## read final_data 
+```{r}
+final_data_de <- read.table(file = "Data.tsv", sep = "\t", header = TRUE)
+
+final_data_v <- read.table(file = "Data_v.tsv", sep = "\t", header = TRUE)
+
+final_data_de
+
+final_data_v
+ 
+```
+
+
+
